@@ -32,6 +32,16 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/topReviews', async (req, res) => {
+            const result = await reviewCollection.find().sort({ rating: -1 }).limit(6).toArray()
+            res.send(result)
+        })
+
+        app.post('/addReview', async (req, res) => {
+            const data = req.body
+            const result = await reviewCollection.insertOne(data)
+            res.send(result)
+        })
 
 
 
