@@ -26,12 +26,25 @@ async function run() {
 
         const db = client.db('localbites-db')
         const reviewCollection = db.collection('reviews')
+        const fovoritesCollection = db.collection('fovorites')
 
         //get method for All Reviews page
         app.get('/allReviews', async (req, res) => {
-            const result = await reviewCollection.find().toArray()
-            res.send(result)
-        })
+            try {
+                const search = req.query.search || "";
+
+                const query = search
+                    ? { food_name: { $regex: search, $options: "i" } }
+                    : {};
+
+                const result = await reviewCollection.find(query).sort({ created_at: -1 }).toArray();
+                res.send(result);
+
+            } catch (error) {
+                console.error("Error fetching reviews:", error);
+                res.status(500).send({ error: "Failed to fetch reviews" });
+            }
+        });
 
         //Get method for Food View details page
         app.get('/allReviews/:id', async (req, res) => {
@@ -65,6 +78,28 @@ async function run() {
             const result = await reviewCollection.insertOne(data)
             res.send(result)
         })
+
+        //Store fovorite data from Heart
+        app.post('/favorites', async (req, res) => {
+            try {
+                const { _id, userEmail, ...favoriteData } = req.body;
+
+                if (!_id || !userEmail) {
+                    return res.status(400).send({ message: "Missing _id or userEmail in request body" });
+                }
+
+                const exists = await fovoritesCollection.findOne({ _id, userEmail });
+                if (exists) {
+                    return res.status(409).send({ message: "Already added to favorites" });
+                }
+
+                const result = await fovoritesCollection.insertOne({ _id, userEmail, ...favoriteData });
+                res.status(201).send({ success: true, message: "Added to favorites", result });
+            } catch (error) {
+                res.status(500).send({ message: "Failed to add favorite" });
+            }
+        });
+
 
         //Update method for my Reviews
         app.put('/editReviews/:id', async (req, res) => {
