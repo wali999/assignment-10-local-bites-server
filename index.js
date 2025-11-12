@@ -66,7 +66,19 @@ async function run() {
             res.send(result)
         })
 
+        //Update method for my Reviews
+        app.put('/editReviews/:id', async (req, res) => {
+            const { id } = req.params
+            const data = req.body
+            const objectId = new ObjectId(id)
+            const filter = { _id: objectId }
+            const update = {
+                $set: data
+            }
+            const result = await reviewCollection.updateOne(filter, update)
+            res.send(result)
 
+        })
 
         //Delete option for my reviews
         app.delete('/myReviews/:id', async (req, res) => {
